@@ -1,0 +1,5 @@
+This is a project to generate fake words [link].
+
+This project was designed for Python 2.7. In order to use this as a library, you'll need numpy. If you want to be able to execute the notebook as well, you'll need Jupyter.
+
+To reduce file size, dictionaries are downloaded with bower.
