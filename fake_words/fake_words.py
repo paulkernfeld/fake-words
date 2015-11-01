@@ -46,7 +46,7 @@ LANGUAGES = {
         "spanish",
         "lemario_spanish_dict/index.txt",
         "iso-8859-1",
-        "dona/index.txt",
+        "belarmino/index.txt",
         u"aábcdeéfghiíjklmnñoópqrstuúüvwxyz"
     ),
 }
