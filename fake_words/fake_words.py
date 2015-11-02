@@ -119,36 +119,32 @@ class Language(object):
 
             # Record observed n-grams
             for k in range(min_gram, max_gram + 1):
-                for i in range(len(word_padded) - k):
+                for i in range(len(word_padded) - k + 1):
                     self.n_grams[k][tuple(word_padded[i:i+k])] += 1
 
         # print u"{} punctuation: {}".format(self.info.name, u" ".join(punctuation))
         # print u"{} strange letters: {}".format(self.info.name, u" ".join(strange_letters))
 
     def sample_progressive(self, n_times):
-        sampled = set()
+        sampled = list()
         for i in xrange(n_times):
             # Start with a start token
             word_so_far = ' '
 
             while True:
                 next_probs = np.empty(len(self.alphabet_with_space))
-                for i, next_letter in enumerate(self.alphabet_with_space):
-                    next_probs[i] = self.get_word_prob(word_so_far + next_letter)
+                for j, next_letter in enumerate(self.alphabet_with_space):
+                    next_probs[j] = self.get_word_prob(word_so_far + next_letter)
                 next_probs = e ** next_probs
                 next_letter = choice(list(self.alphabet_with_space), p=next_probs / next_probs.sum())
                 word_so_far += next_letter
-
-                # Stop the sample if we're in a terrible loop
-                if len(word_so_far) >= 12:
-                    word_so_far += u"..."
-                    break
 
                 # Stop the sample when we sample an end token
                 if next_letter == ' ':
                     break
 
-            sampled.add(word_so_far)
+            # Remove the start and end tokens
+            sampled.append(word_so_far[1:-1])
 
         return sampled
 
@@ -167,7 +163,7 @@ class Language(object):
 
             # Generate an initial word
             word = [pick_letter() for _ in xrange(word_length)]
-            word_prob = float("-inf")
+            word_prob = self.get_word_prob(u" {} ".format("".join(word)))
             for j in xrange(n_samples):
                 new_word = word[:]
 
