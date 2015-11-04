@@ -21,12 +21,15 @@ BASE_PATH = "bower_components"
 """
 An abstraction for language-specific information:
 * (str) The name of the language
-* (str) The path to a plaintext newline-separated dictionary for the language
-* (str) The encoding of the dictionary
+* (str) The plaintext dictionary for the language
 * (str) The text corpus for the language
 * (unicode) The alphabet of the language, listing accented characters separately
 """
-LanguageInfo = namedtuple("LanguageInfo", ["name", "dict_path", "dict_encoding", "corpus", "alphabet"])
+LanguageInfo = namedtuple("LanguageInfo", ["name", "dictionary_text", "corpus", "alphabet"])
+
+
+def _open_file_simple(file_path, encoding):
+    return codecs.open(join(BASE_PATH, file_path), 'r', encoding=encoding)
 
 
 def load_gutenberg_text(file_path):
@@ -37,55 +40,81 @@ def load_gutenberg_text(file_path):
     gutenberg_regex = ".*START OF THIS PROJECT GUTENBERG EBOOK(.*)END OF THIS PROJECT GUTENBERG EBOOK.*"
     regex = re.compile(gutenberg_regex, flags=re.DOTALL)
 
-    return regex.match(codecs.open(join(BASE_PATH, file_path), 'r', encoding='utf8').read()).group(0)
+    return regex.match(_open_file_simple(file_path, "utf-8").read()).group(0)
+
+
+def _parse_ispell_file(lines):
+    """
+    ISpell files seem to be composed of lines, where each line is either blank, or composed of a word, whitespace,
+    then a number.
+    """
+    regex = re.compile("^((.+)\s+(.+))?$")
+
+    words = []
+    for line in lines:
+        empty, word, number = regex.match(line).groups()
+        if empty is not None:
+            words.append(word)
+
+    return "\n".join(words)
+
+
+def load_ispell_file(file_path, encoding):
+    return _parse_ispell_file(_open_file_simple(file_path, encoding).readlines())
+
+
+def load_derewo(file_path, encoding):
+    # Strip off the header
+    document = _open_file_simple(file_path, encoding).read()
+    file_regex = re.compile(".*---\n(.*)", flags=re.DOTALL)
+
+    document, = file_regex.match(document).groups()
+
+    # Parse the rest of the file using ISpell style.
+    return _parse_ispell_file(document.split("\n"))
+
 
 
 LANGUAGES = {
     "english": LanguageInfo(
         "english",
-        "TWL06/index.txt",
-        "utf-8",
+        _open_file_simple("TWL06/index.txt", "utf-8").read(),
         load_gutenberg_text("tale/index.txt"),
         u"abcdefghijklmnopqrstuvwxyz'"
     ),
     "french": LanguageInfo(
         "french",
-        "ods5/index.txt",
-        "utf-8",load_gutenberg_text("lesmis/index.txt"),
+        _open_file_simple("ods5/index.txt", "utf-8").read(),
+        load_gutenberg_text("lesmis/index.txt"),
         u"aàâäbcçdeéèêëfghiîïjklmnoöôpqrstuûüùvwxyz'"
     ),
     "german": LanguageInfo(
         "german",
-        "derewo/derewo-v-30000g-2007-12-31-0.1",
-        "iso-8859-1",
+        load_derewo("derewo/derewo-v-30000g-2007-12-31-0.1", "ISO-8859-15"),
         load_gutenberg_text("siddhartha/index.txt"),
         u"aäbcdefghijklmnoöpqrsßtuüvwxyz"
     ),
     "italian": LanguageInfo(
         "italian",
-        "zingarelli2005/index.txt",
-        "utf-8",
+        _open_file_simple("zingarelli2005/index.txt", "utf-8").read(),
         load_gutenberg_text("viva/index.txt"),
         u"aàbcdeèéfghiìlmnoòpqrstuùvz'"
     ),
     "latin": LanguageInfo(
         "latin",
-        "whitaker/index",
-        "utf-8",
+        _open_file_simple("whitaker/index", "utf-8").read(),
         load_gutenberg_text("cicero/index.txt"),
         u"abcdefghilmnopqrstuvwxz"
     ),
     "polish": LanguageInfo(
         "polish",
-        "ispell_pl/polish.sup",
-        "iso-8859-2",
+        load_ispell_file("ispell_pl/polish.sup", "iso-8859-2"),
         load_gutenberg_text("pan-tadeusz/index.txt"),
         u"aąbcćdeęfghilłmnńoóprsśtuxyzźż"
     ),
     "spanish": LanguageInfo(
         "spanish",
-        "lemario_spanish_dict/index.txt",
-        "iso-8859-1",
+        _open_file_simple("lemario_spanish_dict/index.txt", "iso-8859-1").read(),
         load_gutenberg_text("belarmino/index.txt"),
         u"aábcdeéfghiíjklmnñoópqrstuúüvwxyz"
     ),
@@ -107,8 +136,7 @@ class Language(object):
         # Build dictionary
         self.info = info
         self.dictionary = set()
-        dictionary_file = codecs.open(join(BASE_PATH, info.dict_path), "r", info.dict_encoding)
-        for word in dictionary_file.read().split():
+        for word in self.info.dictionary_text.split():
             self.dictionary.add(word.lower())
 
         # Initialize word frequency model
@@ -118,16 +146,16 @@ class Language(object):
         self.n_grams = {}
         self.found_punctuation = defaultdict(int)
         self.found_strange_letters = defaultdict(int)
-        self.train_frequency_model(min_gram, max_gram)
+        self._train_frequency_model(min_gram, max_gram)
 
-    def generate_n_grams(self, min_gram, max_gram):
+    def _generate_n_grams(self, min_gram, max_gram):
         for k in range(min_gram, max_gram + 1):
             grams = {}
             for l in itertools.product(self.info.alphabet + " ", repeat=k):
                 grams[l] = 1
             self.n_grams += [grams]
 
-    def train_frequency_model(self, min_gram, max_gram):
+    def _train_frequency_model(self, min_gram, max_gram):
         # First, clean the document by replacing non-approved punctuation with a space, the start/end token
         document = list(self.info.corpus.lower())
         for i, l in enumerate(document):
@@ -279,7 +307,15 @@ class Language(object):
         return word_prob
 
     def top_words(self, length, n_top):
+        """
+        :param int length: the length of words to search
+        :param int n_top: the number of pairs to return
+        :return [(float, str)]: the n_top words with highest likelihoods, in a heap
+        """
         def evaluator(n_grams, word, total_length, best_words):
+            """
+            Check if this word has a high enough likelihood to continue searching.
+            """
             word = tuple(' ' + word)
             word_prob = self.get_word_log_likelihood(word)
             if not len(best_words):
@@ -287,11 +323,17 @@ class Language(object):
             return word_prob > best_words[0][0]
 
         def visitor(n_grams, word, best_words):
+            """
+            Check if this word has a high likelihood and, if so, store it.
+            """
             word = tuple(' ' + word + ' ')
             word_prob = self.get_word_log_likelihood(word)
             try_to_store(best_words, word, word_prob, MAX_WORDS_TO_STORE)
 
         def visit_words(prefix, alphabet, length, evaluate, visit):
+            """
+            Visit words in a DFS order, pruning when evaluate returns False.
+            """
             if length == 0:
                 visit(prefix)
                 return
@@ -316,8 +358,10 @@ class Language(object):
         return words
 
 
-# returns true iff this word is good enough to go into the heap
 def try_to_store(best_words, word, word_prob, max_to_store):
+    """
+    Try to store this word in a heap, but only if the word's likelihood is high enough.
+    """
     if len(best_words) < max_to_store:
         heapq.heappush(best_words, (word_prob, word))
         return True
