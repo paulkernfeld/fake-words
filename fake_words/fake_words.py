@@ -23,9 +23,10 @@ An abstraction for language-specific information:
 * (str) The name of the language
 * (str) The plaintext dictionary for the language
 * (str) The text corpus for the language
+* (str) The pretty name of the text corpus for the language
 * (unicode) The alphabet of the language, listing accented characters separately
 """
-LanguageInfo = namedtuple("LanguageInfo", ["name", "dictionary_text", "corpus", "alphabet"])
+LanguageInfo = namedtuple("LanguageInfo", ["name", "dictionary_text", "corpus", "corpus_name", "alphabet"])
 
 
 def _open_file_simple(file_path, encoding):
@@ -74,48 +75,60 @@ def load_derewo(file_path, encoding):
     return _parse_ispell_file(document.split("\n"))
 
 
+def load_odm():
+    document = _open_file_simple("sjp/odm.txt", "windows-1250").read()
+    return "\n".join(re.findall(r"[\w'\-]+", document, flags=re.UNICODE))
+
+
 
 LANGUAGES = {
     "english": LanguageInfo(
         "english",
         _open_file_simple("TWL06/index.txt", "utf-8").read(),
         load_gutenberg_text("tale/index.txt"),
+        "A Tale of Two Cities",
         u"abcdefghijklmnopqrstuvwxyz'"
     ),
     "french": LanguageInfo(
         "french",
         _open_file_simple("ods5/index.txt", "utf-8").read(),
         load_gutenberg_text("lesmis/index.txt"),
+        "Les Misérables",
         u"aàâäbcçdeéèêëfghiîïjklmnoöôpqrstuûüùvwxyz'"
     ),
     "german": LanguageInfo(
         "german",
-        load_derewo("derewo/derewo-v-30000g-2007-12-31-0.1", "ISO-8859-15"),
+        load_derewo("derewo/derewo-v-100000t-2009-04-30-0.1", "ISO-8859-15"),
         load_gutenberg_text("siddhartha/index.txt"),
+        "Siddhartha",
         u"aäbcdefghijklmnoöpqrsßtuüvwxyz"
     ),
     "italian": LanguageInfo(
         "italian",
         _open_file_simple("zingarelli2005/index.txt", "utf-8").read(),
         load_gutenberg_text("viva/index.txt"),
+        "La vita italiana durante la rivoluzione francese e l'Impero",
         u"aàbcdeèéfghiìlmnoòpqrstuùvz'"
     ),
     "latin": LanguageInfo(
         "latin",
         _open_file_simple("whitaker/index", "utf-8").read(),
         load_gutenberg_text("cicero/index.txt"),
+        "Cicero's Orations",
         u"abcdefghilmnopqrstuvwxz"
     ),
     "polish": LanguageInfo(
         "polish",
-        load_ispell_file("ispell_pl/polish.sup", "iso-8859-2"),
+        load_odm(),
         load_gutenberg_text("pan-tadeusz/index.txt"),
-        u"aąbcćdeęfghilłmnńoóprsśtuxyzźż"
+        "Pan Tadeusz",
+        u"aąbcćdeęfghilłmnńoóprsśtuwyzźż"
     ),
     "spanish": LanguageInfo(
         "spanish",
         _open_file_simple("lemario_spanish_dict/index.txt", "iso-8859-1").read(),
         load_gutenberg_text("belarmino/index.txt"),
+        "Belarmino y Apolonio",
         u"aábcdeéfghiíjklmnñoópqrstuúüvwxyz"
     ),
 }
