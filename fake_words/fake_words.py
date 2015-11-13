@@ -91,10 +91,10 @@ LANGUAGES = {
     ),
     "french": LanguageInfo(
         "french",
-        _open_file_simple("ods5/index.txt", "utf-8").read(),
+        _open_file_simple("dicofr/index.txt", "ISO-8859-15").read(),
         load_gutenberg_text("lesmis/index.txt"),
         "Les Misérables",
-        u"aàâäbcçdeéèêëfghiîïjklmnoöôpqrstuûüùvwxyz'"
+        u"aàâäbcçdeéèêëfghiîïjklmnoöôpqrstuûüùvwxyÿz'"
     ),
     "german": LanguageInfo(
         "german",
@@ -126,7 +126,7 @@ LANGUAGES = {
     ),
     "spanish": LanguageInfo(
         "spanish",
-        _open_file_simple("lemario_spanish_dict/index.txt", "iso-8859-1").read(),
+        _open_file_simple("lemario_spanish_dict/index.txt", "iso-8859-15").read(),
         load_gutenberg_text("belarmino/index.txt"),
         "Belarmino y Apolonio",
         u"aábcdeéfghiíjklmnñoópqrstuúüvwxyz"

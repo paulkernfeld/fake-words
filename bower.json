@@ -8,7 +8,6 @@
     "tale": "http://www.gutenberg.org/files/98/98.txt",
     "zingarelli2005": "http://coursera.cs.princeton.edu/algs4/testing/boggle/dictionary-zingarelli2005.txt",
     "TWL06": "https://scrabblehelper.googlecode.com/svn/trunk/ScrabbleHelper/src/dictionaries/TWL06.txt",
-    "ods5": "http://www.ottawascrabbleclub.com/Lists/ods5.txt",
     "viva": "http://www.gutenberg.org/files/43178/43178-0.txt",
     "lesmis": "http://www.gutenberg.org/cache/epub/17489/pg17489.txt",
     "cicero": "http://www.gutenberg.org/cache/epub/226/pg226.txt",
@@ -18,6 +17,7 @@
     "lemario_spanish_dict": "http://pocketcm.com/phorum/file.php?14,file=207,filename=dict.zip",
     "derewo": "http://www1.ids-mannheim.de/fileadmin/kl/derewo/derewo-v-100000t-2009-04-30-0.1.zip",
     "belarmino": "http://www.gutenberg.org/cache/epub/14318/pg14318.txt",
-    "sjp": "http://sjp.pl/slownik/odmiany/sjp-odm-20150927.zip"
+    "sjp": "http://sjp.pl/slownik/odmiany/sjp-odm-20150927.zip",
+    "dicofr": "http://www.pallier.org/ressources/dicofr/liste.de.mots.francais.frgut.txt"
   }
 }
